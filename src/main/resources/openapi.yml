@@ -1,0 +1,173 @@
+openapi: 3.0.1
+info:
+  title: card-management
+  description: Provides cards management - person (card applicant) create, bulk create, delete and card file create.
+  version: '1'
+paths:
+  /person/{oib}:
+    get:
+      summary: Returns person (credit card applicant) determined by oib.
+      description: Returns person (credit card applicant) determined by oib.
+      tags:
+        - Person
+      parameters:
+        - name: oib
+          in: path
+          required: true
+          description: This is unique person identifier.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: returning credit card applicant
+          content:
+            "application/json":
+              schema:
+                $ref: '#/components/schemas/person'
+              example:
+                name: "Leona"
+                surname: "Tolj"
+                oib: "51817901779"
+                cardStatus: "NEW"
+        '404':
+            description: Person not found in the database.
+    delete:
+      summary: Deletes person determined by oib. Updates status for card file to INACTIVE.
+      description: Deletes person determined by oib. Updates status for card file to INACTIVE.
+      tags:
+        - Person
+      parameters:
+        - name: oib
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Person was succesfully deleted from database. Status of card file belonging to person's oib was updated to INACTIVE.
+        '404':
+          description: Person was not found in the database.
+  /person:
+    post:
+      summary: Initiate creation of person (card applicant).
+      description: This method creates person in database with status NEW.
+      tags:
+        - Person
+      requestBody:
+        $ref: "#/components/requestBodies/PersonRequest"
+      responses:
+        '202':
+          description: Accepted
+        '409':
+          description: Conflict - person already exsists in database.
+        '400':
+          description: Invalid data sent in request.
+
+  /card-file:
+    post:
+      summary: Initiate creation of card file and saving it to the file system.
+      description: This method creates card file and saves it to the file system. Info regarding file creation is saved in the database (table card_file).
+      tags:
+        - Card File
+      requestBody:
+        $ref: "#/components/requestBodies/CardFileRequest"
+      responses:
+        '202':
+          description: Accepted
+        '404':
+          description: Person was not found in the database.
+        '400':
+          description: Invalid data sent in request.
+        '409':
+          description: Conflict - card file was already created.
+
+  /bulk/person:
+    post:
+      summary: Initiate creation of persons (card applicants) in a bulk.
+      description: This method creates persons in database with status NEW. If any of persons in bulk is invalid, neiher one of the persons will be processed.
+      tags:
+        - Person
+      requestBody:
+        $ref: "#/components/requestBodies/BulkPersonRequest"
+      responses:
+        '202':
+          description: Accepted
+        '409':
+          description: Conflict - person already exsists in database.
+        '400':
+          description: Invalid data sent in request.
+
+components:
+  schemas:
+    cardStatusType:
+      type: string
+      enum:
+        - NEW
+        - ACTIVE
+        - CLOSED
+    person:
+      required:
+        - name
+        - surname
+        - oib
+        - cardStatus
+      type: object
+      properties:
+        name:
+          type: string
+        surname:
+          type: string
+        oib:
+          type: string
+        cardStatus:
+          $ref: '#/components/schemas/cardStatusType'
+  requestBodies:
+    PersonRequest:
+      description: Person data for insert into person table.
+      required: true
+      content:
+        application/json:
+          schema:
+            properties:
+              name:
+                type: string
+                description: person name
+              surname:
+                type: string
+                description: person surname
+              oib:
+                type: string
+                description: unique person identifier
+              cardStatus:
+                type: string
+                description: status of credit card
+                enum:
+                    - NEW
+                    - ACTIVE
+                    - CLOSED
+    BulkPersonRequest:
+      description: Bulk Person data request.
+      required: true
+      content:
+        application/json:
+          schema:
+            properties:
+              numberOfPersons:
+                type: integer
+                description: number of persons in bulk
+              persons:
+                type: array
+                description: list of persons
+                items:
+                  $ref: '#/components/schemas/person'
+
+    CardFileRequest:
+      description: Contains oib of person whose file will be created.
+      required: true
+      content:
+        application/json:
+          schema:
+            properties:
+              oib:
+                type: string
+                description: unique person identifier

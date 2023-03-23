@@ -1,0 +1,17 @@
+{
+  "numberOfPersons": 2,
+  "persons": [
+    {
+      "name": "Sanja",
+      "surname": "Tolj",
+      "oib": "111247",
+      "cardStatus": "NEW"
+    },
+    {
+      "name": "Sanja",
+      "surname": "Tolj",
+      "oib": "111247",
+      "cardStatus": "NEW"
+    }
+  ]
+}
